@@ -1,0 +1,48 @@
+# To run:
+# - copy .env-template to .env and set the required vars inside the file
+# - run: docker-compose up --watch
+name: docker-compose-demo-1
+
+services:
+  
+  redis:
+    image: "redis:latest"
+
+  db:
+    build: ../../apps/db/.
+    environment:
+      - PGDATA=/var/lib/postgres/data/pgdata
+    env_file: ".env"
+    ports:
+      - 5432:5432
+    volumes:
+      - ../../apps/db/data:/var/lib/postgres/data
+      - ../../apps/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+# https://docs.docker.com/compose/how-tos/model-runner/
+# https://docs.docker.com/model-runner/
+  ai_runner:
+    provider:
+      type: model
+      options:
+        #model: ai/smollm2          # small, good at knowledge and reasoning
+        #model: ai/llama3.2:1B-Q8_0 # fairly small, good at small code snippets, chat, Q&A
+        model: ai/mistral:7B-Q4_K_M     # Fine-tuned on code & text formatting
+
+  api_app:
+    build: ../../apps/api/.
+    ports:
+      - "9494:9494"
+    develop:
+      watch:
+        - action: rebuild
+          path: ../../apps/api/requirements.txt
+        - action: sync
+          path: ../../apps/api/app
+          target: /code/app
+    env_file: ".env"
+    command: python /code/app/main.py 
+    depends_on:
+      - redis
+      - db
+      - ai_runner
