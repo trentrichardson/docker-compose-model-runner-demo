@@ -26,13 +26,13 @@ except Exception as e:
 # ─── FUNCTION TO CONVERT TEXT TO EMBEDDING ─────────────────
 
 def generate_embedding_from_text(text: str) -> list[float]:
-    embedding = model.encode(text)
+    embedding = model.encode(text, normalize_embeddings=True)
     return embedding.tolist()
 
 
 # ─── FUNCTION TO CONVERT FILE BYTES TO EMBEDDING ─────────────────
 
-def generate_embedding_from_file(file_bytes: bytes) -> list:
+def generate_embedding_from_file(file_bytes: bytes) -> list[float]:
     """
     Converts file bytes to text and generates an embedding.
 

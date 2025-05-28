@@ -12,6 +12,8 @@ This is a docker compose demo app to show how multiple services can be run toget
 ## Quick Start
 
 - Ensure Docker Desktop is installed and up to latest version for Docker Model Runner.
-- Open a terminal and `cd` into this directory.
-- Run `docker compose up --watch`. This may take a few minutes to download images on the first run.
+- Make a copy of `bin/lcl/.env-template` to `.env` and set the env variables to your preference.
+- Open a terminal and `cd` into `bin/lcl`.
+- Run `docker compose up --watch` or `docker-compose up --watch` depending on your system. 
+  - This may take a few minutes to download images on the first run.
 - Go to `http://localhost:9494/docs` in your browser

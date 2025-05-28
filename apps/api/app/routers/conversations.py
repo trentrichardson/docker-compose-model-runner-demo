@@ -44,18 +44,13 @@ async def get_session() -> AsyncSession:
 
 
 async def find_closest_documents(session: AsyncSession, embedding: list[float], limit: int = 5):
-    embedding_literal = f"[{', '.join(map(str, embedding))}]"
-
-    result = await session.execute(
-        text("""
-            SELECT id, name, content, content_type, embedding
-            FROM documents
-            ORDER BY embedding <=> :embedding
-            LIMIT :limit
-        """),
-        {"embedding": embedding_literal, "limit": limit}
+    stmt = (
+        select(Document)
+        .order_by(Document.embedding.l2_distance(embedding))
+        .limit(limit)
     )
-    return result.fetchall()
+    result = await session.execute(stmt)
+    return result.scalars().all()
 
 def call_llm_api(user_message):
     print("------------------------")
@@ -141,16 +136,16 @@ async def create_or_update_conversation(
     # 3. Construct context from relevant docs (e.g., concatenate content)
     context_texts = []
     for doc in relevant_docs:
-        content_snippet = doc.content.decode("utf-8", errors="ignore")[:500]  # first 500 chars
+        content_snippet = doc.content.decode("utf-8", errors="ignore")#[:500]  # first 500 chars
         context_texts.append(f"Document '{doc.name}': {content_snippet}")
     context = "\n\n".join(context_texts)
 
-    # 4. Build prompt with context + user message
-    prompt = f"""You are an expert SVG graphic designer.
+    # 4. Build prompt with context + user message    
+    prompt = f"""You are an expert SVG graphic designer named Rob Villa who excels at woodworking designs.
 
 - The SVG should be valid and well-formed.
-- Use simple <rect>, <circle>, <line>, <polygon>, and <path> elements.
-- Include inline comments explaining the major parts.
+- If xlink is used, you must include the xlink namespace in the <svg> tag. `xmlns:xlink="http://www.w3.org/1999/xlink"`
+- Use simple <rect>, <circle>, <line>, <polygon>, <text>, and <path> elements.
 - Make sure the entire SVG is enclosed inside a single <svg> tag.
 - Do not explain your output — only return the SVG code inside a markdown code block like this:
 
@@ -164,34 +159,6 @@ Use the following documents as context to generate the svg design:
 Question: {body.message}
 Answer:"""
     
-#     prompt = f"""You are an expert SVG graphic designer named Rob Villa who excels at woodworking designs.
-
-# - The SVG should be valid and well-formed.
-# - If xlink is used, you must include the xlink namespace in the <svg> tag. `xmlns:xlink="http://www.w3.org/1999/xlink"`
-# - Use simple <rect>, <circle>, <line>, <polygon>, <text>, and <path> elements.
-# - Make sure the entire SVG is enclosed inside a single <svg> tag.
-# - Do not explain your output — only return the SVG code inside a markdown code block like this:
-
-# ```svg
-# <your SVG code here>
-# ```
-
-# Use the following documents as context to generate the svg design:
-# {context}
-# - Full sheets of wood that can be cut are 4 feet tall by 8 feet wide and should be scaled to 400px tall by 800px wide as the svg canvas.
-# - The canvas has a white #ffffff background.
-# - All requested cuts are represented as shapes and must be scaled appropriately to the canvas size representing the full sheet of wood.
-# - Each cut shape must have be .125 inches space between shapes. Scale this to the canvas size and represent this as a red #ff0000 1px line.
-# - Requested cut shapes should be grouped together to optimize and preserve as much unused wood space as possible.
-# - Shapes must not overlap each other.
-# - Shapes must be completely inside the 400px tall by 800px wide canvas area.
-# - Shapes may be rotated to find the optimal fit within the sheet of wood.
-# - Measurements requested are all imperial (inches and feet) and must be scaled to the 400px tall by 800px wide canvas.
-# - In the center of each cut shape should be the a text label of the imperial size of the cut shape in red #ff0000 san-serif font 10px.
-
-# Question: {body.message}
-# Answer:"""
-
     # 5. Query LLM
     #llm_response = await query_llm(prompt)
     llm_response = call_llm_api(prompt)
@@ -214,10 +181,3 @@ Answer:"""
         return Response(content=md_code, 
                         media_type="image/svg+xml",
                         headers={"Content-Disposition": 'inline; filename="generated_image.svg"'})
-    
-    return {
-        "status": "success",
-        "conversation_id": str(new_conv.id),
-        "response": llm_response,
-        "md_code": extract_md_code(llm_response)
-    }
