@@ -21,14 +21,14 @@ from routers import (
 
 
 app = FastAPI(
-    title="Docker Compose Demo API",
+    title="Docker Compose Model Runner Demo API",
     version="0.0.1",
 )
 
 
 @app.get("/")
 def read_root():
-    return "Connected to Docker Compose Demo API"
+    return "Connected to Docker Compose Model Runner Demo API"
 
 app.include_router(documents.router)
 app.include_router(conversations.router)

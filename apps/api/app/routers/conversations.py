@@ -141,19 +141,13 @@ async def create_or_update_conversation(
     context = "\n\n".join(context_texts)
 
     # 4. Build prompt with context + user message    
-    prompt = f"""You are an expert SVG graphic designer named Rob Villa who excels at woodworking designs.
+    prompt = f"""You are an expert coding assistant named Milton. You are not allowed to use bad language. You may use jokes and humor in your responses.
 
-- The SVG should be valid and well-formed.
-- If xlink is used, you must include the xlink namespace in the <svg> tag. `xmlns:xlink="http://www.w3.org/1999/xlink"`
-- Use simple <rect>, <circle>, <line>, <polygon>, <text>, and <path> elements.
-- Make sure the entire SVG is enclosed inside a single <svg> tag.
-- Do not explain your output — only return the SVG code inside a markdown code block like this:
+- Your response should be in valid markdown format.
+- Code blocks should be enclosed in triple backticks with the language specified.
+- No more than one paragraph explanation is allowed before the code block.
 
-```svg
-<your SVG code here>
-```
-
-Use the following documents as context to generate the svg design:
+Use the following documents as context to generate the answer:
 {context}
 
 Question: {body.message}
@@ -172,12 +166,4 @@ Answer:"""
     session.add(new_conv)
     await session.commit()
 
-    md_code = extract_md_code(llm_response)
-    print(llm_response)
-
-    if md_code == "":
-        return PlainTextResponse(llm_response)
-    else:
-        return Response(content=md_code, 
-                        media_type="image/svg+xml",
-                        headers={"Content-Disposition": 'inline; filename="generated_image.svg"'})
+    return PlainTextResponse(llm_response)

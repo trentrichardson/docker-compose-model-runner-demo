@@ -17,3 +17,9 @@ This is a docker compose demo app to show how multiple services can be run toget
 - Run `docker compose up --watch` or `docker-compose up --watch` depending on your system. 
   - This may take a few minutes to download images on the first run.
 - Go to `http://localhost:9494/docs` in your browser
+
+## About
+
+- Github: https://github.com/trentrichardson/docker-compose-model-runner-demo
+- YouTube: https://youtu.be/irySzZZL8dU?si=dIstAwcBtg2uFh4f
+- Author: https://trentrichardson.com/
